@@ -42,6 +42,7 @@ class ClassifierNN:
         # we do this to allow the user to pass parameters to the forward propagation function anywhere outside, if he didn't pass any parameters, we will use the parameters of the model
         if parameters is None:
             parameters = self.parameters
+        
         cashes = {'A0': X} # this is not efficient with larger datasets
         A = X # first activation is the input layer 
         
@@ -58,8 +59,9 @@ class ClassifierNN:
             cashes['D0'] = D
 
         
-        for l in range(1, self.num_layers):
-            # Z calculation for the current layer Z = W.A + b
+        for l in range(1, self.num_layers): # will count from 1 to num_layers - 1 
+            
+            ## Z calculation for the current layer Z = W.A + b
             Z = np.dot(parameters['W' + str(l)], A) + parameters['b' + str(l)]
 
             ## apply the activation function on Z to get A
@@ -74,17 +76,17 @@ class ClassifierNN:
                 A = self.softmax(Z)
 
 
-            ## apply dropout
+            ## apply dropout on A if keep_prob is not None
             if keep_prob != None:
                 print("from inside dropout")
-                if l != self.num_layers - 1: # we don't apply dropout on the output layer
+                if l != self.num_layers - 1: # We don't apply dropout on the output layer
                     # print("l = ", l)
                     # print("A shape = ", A.shape)
-                    D = np.random.rand(A.shape[0], A.shape[1]) # create a matrix of random numbers with the same shape as A between 0 and 1
-                    D = (D < keep_prob[l]).astype(int) # convert the matrix to 0s and 1s
-                    A = np.multiply(A, D) # multiply by the activations to shut down those that correspond to 0
-                    A /= keep_prob[l] # divide by the keep probability to keep the expected value of the activations the same as before dropping out some of them
-                    cashes['D' + str(l)] = D # save the D matrix to use it in the backward propagation
+                    D = np.random.rand(A.shape[0], A.shape[1]) # Create a matrix of random numbers with the same shape as A with numbers between 0 and 1
+                    D = (D < keep_prob[l]).astype(int) # Convert the matrix to 0s and 1s
+                    A = np.multiply(A, D) # Multiply by the activations to shut down those that correspond to 0
+                    A /= keep_prob[l] # Divide by the keep probability to keep the expected value of the activations the same as before dropping out some of them
+                    cashes['D' + str(l)] = D # save the D matrix to use it in the backward propagation by multiplying them with the upstream derivatives dA
                     # print("D shape = ", cashes['D' + str(l)].shape)
             
             ## cache the Z and A of the current layer to use them in the backward propagation
@@ -113,17 +115,20 @@ class ClassifierNN:
     # define the cost function
     def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
         m = Y.shape[1]
-        # handle the case when A is 0 or 1, as log(0) is undefined
+        ## Handle the case when A is 0 or 1, as log(0) is undefined
         A[A == 0] = 1e-10
         A[A == 1] = 1 - 1e-10
+
+        ## calculate the cost function which will be the average of the losses of all the examples in the batch 
         if loss == 'BinaryCrossEntropy':
-            cost = (-1/ m) * (np.sum(Y*np.log(A) + (1-Y)*np.log(1-A)))
+            cost = (-1/ m) * (np.sum(Y*np.log(A) + (1-Y)*np.log(1-A))) # Here Y is a vector of shape (1, M) and values of 0 or 1, and A is a vector of shape (1, M) and values between 0 and 1
         elif loss == 'CategoricalCrossEntropy':
-            cost = (-1/ m) * (np.sum(Y*np.log(A)))
+            cost = (-1/ m) * (np.sum(Y*np.log(A))) # Here Y is a matrix of shape (C, M) and values of one-hot vectors, and A is a matrix of shape (C, M) and values between 0 and 1
         elif loss == "SpareCategoricalCrossEntropy":
-            selected_probs = A[Y, np.arange(m)] # np.arange(M) will create an array of numbers from 0 to M-1 which we will use to index the columns of A increasing by 1 each time
+            # Selected_probs is a vector of shape (1, M) containing the probabilities of the selected classes for each example
+            selected_probs = A[Y, np.arange(m)] # We use the value of Y as an index to select the probabilities of the selected classes for each example and np.arange(m) is used to index all the examples in order 
             cost = (-1/ m) * (np.sum(np.log(selected_probs)))
-        
+    
         ## add the L2 regularization cost
         if lambd != 0:
             L2_regularization_cost = 0
@@ -152,9 +157,9 @@ class ClassifierNN:
             Y = np.eye(A.shape[0])[Y.reshape(-1)].T # Y is a vector of shape (1, M) and we want to convert it to a matrix of shape (C, M) where C is the number of classes
             dA = - (1 / m) * (np.divide(Y, A))
 
-        # apply the backward activations
         for l in reversed(range(1, self.num_layers)):
             #print("l = ", l)
+            ## dZ calculation from dA (by multiplying dA by dA_dZ -which is the derivative of the activation function with respect to Z-) 
             if self.activations[l-1] == 'sigmoid':
                 dZ = self.sigmoid_backward(dA, cashes['A' + str(l)])
             elif self.activations[l-1] == 'relu':
@@ -163,14 +168,22 @@ class ClassifierNN:
                 dZ = self.tanh_backward(dA, cashes['A' + str(l)])
             elif self.activations[l-1] == 'softmax':
                 dZ = self.softmax_backward(dA, cashes['A' + str(l)])
+            # since Z and A are of the same shape, dZ and dA will be of the same shape as well
             assert dZ.shape == dA.shape
+            
+            ## dW and db calculation from dZ (it will be different depending on whether we are using L2 regularization or not)
             if lambd != 0:
+                # if we are applying L2 regularization, the equation becomes dW = (1/m) * (dZ * A_prev.T) + (lambd/m) * W
                 dW = (1/m) * np.dot(dZ, cashes['A' + str(l-1)].T) + (lambd/m) * self.parameters['W' + str(l)]
             else:
+                # if we are not applying L2 regularization, the equation is dW = (1/m) * (dZ * A_prev.T)
                 dW = (1/m) * np.dot(dZ, cashes['A' + str(l-1)].T)
+            # db = (1/m) * (sum(dZ))
             db = (1/m) * np.sum(dZ, axis=1, keepdims=True)
+            ## The next upstream calculation dA = W.T * dZ
             dA = np.dot(self.parameters['W' + str(l)].T, dZ) 
-            # apply dropout
+            
+            ## Apply dropout
             if keep_prob is not None:
                 # notice that we subtract 1 because the dA that we work with now is the dA of the layer l-1 (the next layer in the backward propagation)
                 # print("l = ", l - 1)
@@ -215,19 +228,32 @@ class ClassifierNN:
 
         for l in range(1, self.num_layers): # num_layers is not included, but since it contains the input layers , things add up
             if optimizer == "gd":
+                # for normal gradient descent, we use the normal update equation on dW and db
+                # w = w - learning_rate * dw
                 self.parameters['W' + str(l)] -= learning_rate * grads['dW' + str(l)]
+                # b = b - learning_rate * db
                 self.parameters['b' + str(l)] -= learning_rate * grads['db' + str(l)]
             elif optimizer == "momentum":
+                ## For the momentum optimizer, we use the exponentially weighted averages of the gradients to update the parameters
+                # Calculate the exponentially weighted averages of the gradients
                 self.v["dW" + str(l)] = beta1 * self.v["dW" + str(l)] + (1 - beta1) * grads['dW' + str(l)]
                 self.v["db" + str(l)] = beta1 * self.v["db" + str(l)] + (1 - beta1) * grads['db' + str(l)]
+                # Update the parameters using the exponentially weighted averages of the gradients
+                # W = W - learning_rate * v
                 self.parameters['W' + str(l)] = self.parameters['W' + str(l)] - learning_rate * self.v["dW" + str(l)]
+                # B = B - learning_rate * v
                 self.parameters['b' + str(l)] = self.parameters['b' + str(l)] - learning_rate * self.v["db" + str(l)]
             elif optimizer == "rmsprop":
+                ## For the RMSprop optimizer, we use the exponentially weighted averages of the squared gradients to update the parameters
                 self.s["dW" + str(l)] = beta1 * self.s["dW" + str(l)] + (1 - beta1) * np.square(grads['dW' + str(l)])
                 self.s["db" + str(l)] = beta1 * self.s["db" + str(l)] + (1 - beta1) * np.square(grads['db' + str(l)])
+                # Update the parameters using the exponentially weighted averages of the squared gradients
+                # W = W - learning_rate * (dW / sqrt(s) + epsilon)
                 self.parameters['W' + str(l)] = self.parameters['W' + str(l)] - learning_rate * (grads['dW' + str(l)] / (np.sqrt(self.s["dW" + str(l)]) + epsilon))
+                # B = B - learning_rate * (db / sqrt(s) + epsilon)
                 self.parameters['b' + str(l)] = self.parameters['b' + str(l)] - learning_rate * (grads['db' + str(l)] / (np.sqrt(self.s["db" + str(l)]) + epsilon))
             elif optimizer == "adam":
+                ## for the adam optimizer, we use the exponentially weighted averages of both the gradients and the squared gradients to update the parameters
                 self.v["dW" + str(l)] = beta1 * self.v["dW" + str(l)] + (1 - beta1) * grads['dW' + str(l)]
                 self.v["db" + str(l)] = beta1 * self.v["db" + str(l)] + (1 - beta1) * grads['db' + str(l)]
                 self.s["dW" + str(l)] = beta2 * self.s["dW" + str(l)] + (1 - beta2) * np.square(grads['dW' + str(l)])
@@ -238,7 +264,9 @@ class ClassifierNN:
                 s_corrected["dW" + str(l)] = self.s["dW" + str(l)] / (1 - np.power(beta2, adam_counter))
                 s_corrected["db" + str(l)] = self.s["db" + str(l)] / (1 - np.power(beta2, adam_counter))
                 # Update the parameters
+                # W = W - learning_rate * (v_corrected / sqrt(s_corrected) + epsilon)
                 self.parameters['W' + str(l)] = self.parameters['W' + str(l)] - learning_rate * (v_corrected["dW" + str(l)] / (np.sqrt(s_corrected["dW" + str(l)]) + epsilon))
+                # B = B - learning_rate * (v_corrected / sqrt(s_corrected) + epsilon)
                 self.parameters['b' + str(l)] = self.parameters['b' + str(l)] - learning_rate * (v_corrected["db" + str(l)] / (np.sqrt(s_corrected["db" + str(l)]) + epsilon))
 
 
@@ -251,7 +279,9 @@ class ClassifierNN:
         adam_counter = 0 # this variable is used to count the number of iterations of the adam optimizer, it is used to correct the values of v and s in the adam optimizer
         if keep_prob != None:
             assert len(keep_prob) == self.num_layers - 1, "The number of keep probabilities must be the same as the number of hidden layers + the input layer"
-        # Prepare the tracked exponential moving averages if the optimizer is momentum or RMSprop or Adam
+        
+        
+        ##  Initialize the exponentially weighted averages if the optimizer is momentum or RMSprop or adam 
         if optimizer == "momentum":
             self.v = self.initialize_averages(self.parameters, optimizer)
         elif optimizer == "rmsprop":
@@ -264,37 +294,48 @@ class ClassifierNN:
         # Start the training loop
         for i in range(num_epochs):
 
-            # Define and prepare the random mini batches
+            ## Define and prepare the random mini batches
             seed = seed + 1 # so that we generate different mini batches each epoch
             mini_batches = self.random_mini_batches(X, Y, batch_size=batch_size, seed=seed)
-            total_cost = 0 # we will accummulate the cost of all the mini batches in this variable
+            #total_cost = 0 # we will accummulate the cost of all the mini batches in this variable
 
+            ## For each epoch we will loop over all the different mini batches
             for mini_batch in mini_batches:
                 X_batch, Y_batch = mini_batch
+                
+                ## Forward propagation
                 Y_prid_batch, cashes = self.forward_propagation(X_batch,keep_prob)
-                cost = self.compute_cost(Y_prid_batch, Y_batch, lambd, loss)
-                total_cost += cost
-                #self.costs.append(cost)
+                ## Compute cost
+                cost = self.compute_cost(Y_prid_batch, Y_batch, lambd, loss) # The cost will be of the mini-batch if we use mini-batch GD (won't be very useful) and the whole dataset if we use batch GD (batch size = M)
+                #total_cost += cost # If we are using batch GD, it would be useful
+                self.costs.append(cost)
+                ## Backward propagation
                 grads = self.backward_propagation(Y_prid_batch, Y_batch, cashes, lambd, keep_prob, loss)
+                ## Update parameters
                 if optimizer == "adam":
                     adam_counter += 1
                 self.update_parameters(grads, learning_rate,adam_counter=adam_counter,optimizer=optimizer,beta1=beta1,beta2=beta2,epsilon=epsilon)
             
-            self.costs.append(total_cost)
+            #self.costs.append(total_cost)
             if print_cost and i % 1000 == 0:
-                print("Cost after iteration {}: {}".format(i, total_cost)) 
+                print("Cost after iteration {}: {}".format(i, cost)) 
         return self.parameters,self.costs
     
 
     def random_mini_batches(self, X, Y, batch_size = 64, seed = 0):
+        # Some variable initializations 
         np.random.seed(seed)
         m = X.shape[1]
         mini_batches = []
-        # shuffle the data
+        
+        ## Shuffle the data
+        # Create a list of random numbers from 0 to m-1
         permutation = list(np.random.permutation(m))
+        # Use that list to shuffle the data by indexing the columns of X and Y with the random numbers order
         shuffled_X = X[:, permutation]
         shuffled_Y = Y[:, permutation]
-        # partition the data
+
+        ## partition the data
         num_complete_batches = m // batch_size
         #print("num_complete_batches = ", num_complete_batches)
         for k in range(num_complete_batches):
@@ -313,17 +354,26 @@ class ClassifierNN:
     
     # optimizers helper functions
     def initialize_averages(self, parameters, optimizer):
+        # the number of layers except the input layer will be half the number of the parameters
         L = len(parameters) // 2
         
 
-        if optimizer == "momentum" or optimizer == "rmsprop":
-            v = {} # will be called v with momentum and s with RMSprop (that is how we will receive it in the caller function)
+        if optimizer == "momentum":
+            v = {} 
             # The variable keeps track of the exponentialy weighted averages of the gradients in case of momentum and the squared gradients in case of RMSprop, but they are initialized in the same way to zeros
             for l in range(1, L + 1):
                 v["dW" + str(l)] = np.zeros(parameters["W" + str(l)].shape)
                 v["db" + str(l)] = np.zeros(parameters["b" + str(l)].shape)
 
             return v
+        elif optimizer == "rmsprop":
+            s = {}
+            # in here we will keep track of the exponentially weighted averages of the squared gradients and initialize them to zeros
+            for l in range(1, L + 1):
+                s["dW" + str(l)] = np.zeros(parameters["W" + str(l)].shape)
+                s["db" + str(l)] = np.zeros(parameters["b" + str(l)].shape)
+
+            return s
         elif optimizer == "adam":
             v = {}
             s = {}
