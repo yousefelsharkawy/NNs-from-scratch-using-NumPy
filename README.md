@@ -6,6 +6,7 @@ Standard Neural Network implementation From Scratch using Numpy, it contains key
 - [Breaking It Down!](#breaking-it-down)
 - [Usage](#usage)
 - [Dependencies](#dependencies)
+- [references](#references)
 
 
 ## Breaking It Down!
@@ -163,7 +164,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     The sigmoid function is a non-linear activation function that squashes the output of the layer between 0 and 1. The formula is given by:
         $$A^{[l]} = \frac{1}{1 + e^{-Z^{[l]}}}$$
     
-        ![Sigmoid Function](Images/sigmoid.jpg)
+    ![Sigmoid Function](Images/sigmoid.jpg)
 
     ```python
     def sigmoid(self, Z):
@@ -174,7 +175,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     The ReLU function is a non-linear activation function that squashes the output of the layer between 0 and infinity. The formula is given by:
         $$A^{[l]} = max(0, Z^{[l]})$$
     
-        ![ReLU Function](Images/relu.jpg)
+    ![ReLU Function](Images/relu.jpg)
     ```python
     def relu(self, Z):
         return np.maximum(0, Z) # max(0, Z)
@@ -184,7 +185,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     The tanh function is a non-linear activation function that squashes the output of the layer between -1 and 1. The formula is given by:
         $$A^{[l]} = \frac{e^{Z^{[l]}} - e^{-Z^{[l]}}}{e^{Z^{[l]}} + e^{-Z^{[l]}}}$$
     
-        ![Tanh Function](Images/tanh.jpg)
+    ![Tanh Function](Images/tanh.jpg)
     ```python
     def tanh(self, Z):
         return np.tanh(Z) # tanh(Z)
@@ -210,7 +211,7 @@ The loss function is a measure of how well the neural network is performing. It 
     The binary cross-entropy loss function is used for binary classification problems. The formula is given by:
         $$L = -\frac{1}{m} (Y \cdot \log(A^{[L]}) + (1 - Y) \cdot \log(1 - A^{[L]}))$$
 
-        ![Binary Cross Entropy](Images/binary_cross_entropy.png)
+![Binary Cross Entropy](Images/binary_cross_entropy.png)
 
         Notice that the closer the predicted value is to the actual value, the smaller the loss value will be.
 
