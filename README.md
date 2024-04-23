@@ -132,7 +132,7 @@ elif optimizer == "adam":
 ```
 The following Gif shows the difference between several optimization algorithms and their convergence speed.
 
-![Optimization Algorithms](images/optimization_algs.gif)
+![Optimization Algorithms](./images/optimizaton_algs.gif)
 
 #### **Setting up mini-batches**
 The code supports mini-batch training, which is a technique that divides the training data into small batches, and then trains the neural network on each batch. This technique is used as a form of efficient and parallelized training. It also helps in reducing the memory requirements of the training process as large datasets may not fit into memory. Moreover, mini-batch training leads to faster training as the weights and biases are updated after each mini-batch. It also introduces stochasticity for better generalization and can be seen as a form of regularization. 
