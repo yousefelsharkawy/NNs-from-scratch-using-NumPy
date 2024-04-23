@@ -163,7 +163,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     The sigmoid function is a non-linear activation function that squashes the output of the layer between 0 and 1. The formula is given by:
         $$A^{[l]} = \frac{1}{1 + e^{-Z^{[l]}}}$$
     
-        ![Sigmoid Function](images/sigmoid.jpg)
+        ![Sigmoid Function](Images/sigmoid.jpg)
 
     ```python
     def sigmoid(self, Z):
@@ -174,7 +174,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     The ReLU function is a non-linear activation function that squashes the output of the layer between 0 and infinity. The formula is given by:
         $$A^{[l]} = max(0, Z^{[l]})$$
     
-        ![ReLU Function](images/relu.jpg)
+        ![ReLU Function](Images/relu.jpg)
     ```python
     def relu(self, Z):
         return np.maximum(0, Z) # max(0, Z)
@@ -184,7 +184,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     The tanh function is a non-linear activation function that squashes the output of the layer between -1 and 1. The formula is given by:
         $$A^{[l]} = \frac{e^{Z^{[l]}} - e^{-Z^{[l]}}}{e^{Z^{[l]}} + e^{-Z^{[l]}}}$$
     
-        ![Tanh Function](images/tanh.jpg)
+        ![Tanh Function](Images/tanh.jpg)
     ```python
     def tanh(self, Z):
         return np.tanh(Z) # tanh(Z)
@@ -196,7 +196,7 @@ In this step the inputs are passed to the neural network layer by layer, and for
     
     The output of the softmax function is a probability distribution over the classes. The class with the highest probability is the predicted class. As per the following image 
 
-    ![softmax output](images/softmax.png)
+    ![softmax output](Images/softmax.png)
         
     ```python
     def softmax(self, Z):
@@ -210,7 +210,7 @@ The loss function is a measure of how well the neural network is performing. It 
     The binary cross-entropy loss function is used for binary classification problems. The formula is given by:
         $$L = -\frac{1}{m} (Y \cdot \log(A^{[L]}) + (1 - Y) \cdot \log(1 - A^{[L]}))$$
 
-        ![Binary Cross Entropy](images/binary_cross_entropy.png)
+        ![Binary Cross Entropy](Images/binary_cross_entropy.png)
 
         Notice that the closer the predicted value is to the actual value, the smaller the loss value will be.
 
@@ -295,7 +295,7 @@ refer to the function `update_parameters` in the code for the implementation of 
 ### Prediction
 After training the neural network, we can use it to make predictions on The data. The prediction is done by passing the input data through the neural network using the forward propagation algorithm. The output of the neural network is the predicted class of the input data which is The class with the highest probability 
 
-![making predictions](images/prediction.gif)
+![making predictions](Images/prediction.gif)
 
 ```python
 def predict(self, X):
@@ -338,7 +338,7 @@ def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
 ##### Dropout
 Dropout is a technique that is also used to prevent overfitting in neural networks. It works by randomly setting a fraction of the neurons in the hidden layers to zero during training. This forces the neural network to spread out the learned features across different neurons and not to rely on specific neurons. This helps in improving the generalization of the model. The following Gif shows how dropout works.
 
-![Dropout](images/dropout.gif)
+![Dropout](Images/dropout.gif)
 
 The code supports dropout, and the user can specify the keep probability, which is the probability of keeping a neuron active during training. The following code snippet shows how dropout is implemented in the code.
 
@@ -395,7 +395,7 @@ In this step, you need to define
 
 For example, For the following neural network:
 
-![Neural Network](images/NN.jpg)
+![Neural Network](Images/NN.jpg)
 
 we have 3 hidden layers and an output layer with 3, 4, 3, and 3 neurons respectively. If we will use the ReLU activation function for the hidden layers and the softmax activation function for the output layer, then the configuration will be as follows:
 
