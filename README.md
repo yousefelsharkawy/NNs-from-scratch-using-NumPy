@@ -153,103 +153,104 @@ def random_mini_batches(self, X, Y, batch_size = 64, seed = 0):
 #### **The Training Loop**
 The training loop is the core of the training process. It consists of the following steps, and they are repeated for a specified number of iterations (also called epochs):
 
-1. Forward Propagation
+1. `Forward Propagation`
 In this step the inputs are passed to the neural network layer by layer, and for each layer, the weights and biases are used to calculate the Net Input, which is then passed through the Activation Function to get the output of the layer. The output of the layer is then passed to the next layer as input.
 
 - The Net Input is calculated using the following formula:
     $$Z^{[l]} = W^{[l]}A^{[l-1]} + b^{[l]}$$
 
-- The Activation Function is applied to the Net Input to get the output of the layer, There are 4 activation functions supported in the code:
-    1. `Sigmoid`
+The Activation Function is applied to the Net Input to get the output of the layer, There are 4 activation functions supported in the code:
+
+- `Sigmoid`
     The sigmoid function is a non-linear activation function that squashes the output of the layer between 0 and 1. The formula is given by:
         $$A^{[l]} = \frac{1}{1 + e^{-Z^{[l]}}}$$
     
     ![Sigmoid Function](Images/sigmoid.jpg)
 
-    ```python
-    def sigmoid(self, Z):
-        return 1 / (1 + np.exp(-Z)) # 1 / (1 + e^-Z)
-    ```
+```python
+def sigmoid(self, Z):
+    return 1 / (1 + np.exp(-Z)) # 1 / (1 + e^-Z)
+```
 
-    2. `ReLU`
+- `ReLU`
     The ReLU function is a non-linear activation function that squashes the output of the layer between 0 and infinity. The formula is given by:
         $$A^{[l]} = max(0, Z^{[l]})$$
     
-    ![ReLU Function](Images/relu.jpg)
-    ```python
-    def relu(self, Z):
-        return np.maximum(0, Z) # max(0, Z)
-    ```
+![ReLU Function](Images/relu.jpg)
+```python
+def relu(self, Z):
+    return np.maximum(0, Z) # max(0, Z)
+```
 
-    3. `Tanh`
+- `Tanh`
     The tanh function is a non-linear activation function that squashes the output of the layer between -1 and 1. The formula is given by:
         $$A^{[l]} = \frac{e^{Z^{[l]}} - e^{-Z^{[l]}}}{e^{Z^{[l]}} + e^{-Z^{[l]}}}$$
     
-    ![Tanh Function](Images/tanh.jpg)
-    ```python
-    def tanh(self, Z):
-        return np.tanh(Z) # tanh(Z)
-    ```
+![Tanh Function](Images/tanh.jpg)
+```python
+def tanh(self, Z):
+    return np.tanh(Z) # tanh(Z)
+```
 
-    4. `Softmax`
+- `Softmax`
     The softmax function is a non-linear activation function that squashes the output of the layer between 0 and 1. It is usually used as the activation function for the output layer of a neural network that performs multi-class classification. The formula is given by:
         $$A^{[l]} = \frac{e^{Z^{[l]}}}{\sum_{i=1}^{n} e^{Z^{[l]}_i}}$$
     
     The output of the softmax function is a probability distribution over the classes. The class with the highest probability is the predicted class. As per the following image 
 
-    ![softmax output](Images/softmax.png)
+![softmax output](Images/softmax.png)
         
-    ```python
-    def softmax(self, Z):
-        expZ = np.exp(Z - np.max(Z))
-        return expZ / expZ.sum(axis=0, keepdims=True)
-    ```
+```python
+def softmax(self, Z):
+    expZ = np.exp(Z - np.max(Z))
+    return expZ / expZ.sum(axis=0, keepdims=True)
+```
 
-2. Compute the Loss
+2. `Compute the Loss`
 The loss function is a measure of how well the neural network is performing. It is calculated by comparing the predicted output of the neural network with the actual output. The code supports 3 loss functions:
-    1. `Binary Cross Entropy`
+-  `Binary Cross Entropy`
     The binary cross-entropy loss function is used for binary classification problems. The formula is given by:
         $$L = -\frac{1}{m} (Y \cdot \log(A^{[L]}) + (1 - Y) \cdot \log(1 - A^{[L]}))$$
 
 ![Binary Cross Entropy](Images/binary_cross_entropy.png)
 
-        Notice that the closer the predicted value is to the actual value, the smaller the loss value will be.
+Notice that the closer the predicted value is to the actual value, the smaller the loss value will be.
 
-    ```python
-    def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
-        # ... some code ...
-        if loss == 'BinaryCrossEntropy':
-            cost = (-1/ m) * (np.sum(Y*np.log(A) + (1-Y)*np.log(1-A))) 
-        # ... some code ...
-    ```
-    2. `Categorical Cross Entropy`
+```python
+def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
+    # ... some code ...
+    if loss == 'BinaryCrossEntropy':
+        cost = (-1/ m) * (np.sum(Y*np.log(A) + (1-Y)*np.log(1-A))) 
+    # ... some code ...
+```
+- `Categorical Cross Entropy`
     The categorical cross-entropy loss function is used for multi-class classification problems. The Vectorized formula is given by:
         $$L = -\frac{1}{m} Y \cdot \log(A^{[L]})$$
     
-    ```python
-    def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
-        # ... some code ...
-        elif loss == 'CategoricalCrossEntropy':
-            cost = (-1/ m) * np.sum(Y * np.log(A))
-        # ... some code ...
-    ```
-    3. `Sparse Categorical Cross Entropy`
+```python
+def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
+# ... some code ...
+elif loss == 'CategoricalCrossEntropy':
+    cost = (-1/ m) * np.sum(Y * np.log(A))
+# ... some code ...
+```
+-  `Sparse Categorical Cross Entropy`
 
     It is the same as the categorical cross-entropy loss function, but it is used when the labels are integers instead of one-hot encoded vectors. The formula is given by:
         $$L = -\frac{1}{m} \sum_{i=1}^{m} \log(A^{[L]}_{Y_i})$$
     
-    ```python
-    def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
-        # ... some code ...
-        elif loss == "SpareCategoricalCrossEntropy":
-            selected_probs = A[Y, np.arange(m)] 
-            cost = (-1/ m) * (np.sum(np.log(selected_probs)))
-        # ... some code ...
-    ```
+```python
+def compute_cost(self, A, Y, lambd = 0, loss = 'BinaryCrossEntropy'):
+    # ... some code ...
+    elif loss == "SpareCategoricalCrossEntropy":
+        selected_probs = A[Y, np.arange(m)] 
+        cost = (-1/ m) * (np.sum(np.log(selected_probs)))
+    # ... some code ...
+```
 
-    The Cost is the average of the loss function over all the examples in the training set. The cost is used to evaluate the performance of the neural network. The goal of the training process is to minimize the cost function. So, it is then used to calculate the gradients of the weights and biases in the next step
+The Cost is the average of the loss function over all the examples in the training set. The cost is used to evaluate the performance of the neural network. The goal of the training process is to minimize the cost function. So, it is then used to calculate the gradients of the weights and biases in the next step
 
-3. Backward Propagation
+3. `Backward Propagation`
 In this step, The gradients of the loss function with respect to the weights and biases are calculated using the chain rule of calculus. They capture information about how the parameters of the neural network affect the loss function. It is then used to update the parameters by nudging them in the direction that reduces the loss function. 
 
 Everything that the code supports in Forward Propagation, Their gradients are also supported in Backward Propagation. Ranging from the activation functions to the loss functions as well as any used techniques like Dropout, Batch Normalization, and Regularization.
@@ -288,7 +289,7 @@ if self.activations[l-1] == 'sigmoid':
 
 Refer to the `backward_propagation` method in the code for more details.
 
-4. Update the Parameters
+4. `Update the Parameters`
 In this step, the weights and biases of the neural network are updated using the gradients of the loss function with respect to them. The update formulas depend on the optimization algorithm used. We have discussed all the supported formulas in the `Configuring the optimization algorithm` section above.
 
 refer to the function `update_parameters` in the code for the implementation of the formulas.
