@@ -272,7 +272,7 @@ class ClassifierNN:
 
             
     # define the train function
-    def train(self, X, Y , learning_rate, num_epochs, batch_size = 64, lambd = 0, keep_prob = None, print_cost = True, loss = 'BinaryCrossEntropy', optimizer = "gd", beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8):
+    def train(self, X, Y , loss, num_epochs = 100,learning_rate = 0.01, batch_size = 64, lambd = 0, keep_prob = None, print_cost = True, optimizer = "gd", beta1 = 0.9, beta2 = 0.999, epsilon = 1e-8):
         # preparing some important variables
         seed = 10 # The seed for randomly generating the mini batches each epoch
         #M = X.shape[1] # number of training examples in the whole dataset, we use it to divide the accumulated cost by it to get the average cost of all examples
