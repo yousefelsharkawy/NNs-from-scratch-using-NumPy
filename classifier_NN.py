@@ -387,17 +387,17 @@ class ClassifierNN:
             return v, s
 
     
-    # define the predict function
-    def predict(self, X):
-        A, cashes = self.forward_propagation(X)
-        predictions = (A > 0.5)
-        return predictions
-    
     # define the accuracy function
     def accuracy(self, X, Y):
         predictions = self.predict(X)
         accuracy = np.mean(predictions == Y) # 1 if they are equal, 0 if they are not, so the mean is the accuracy (count of 1s / total count)
         return accuracy
+    
+    # define the predict function
+    def predict(self, X):
+        A, cashes = self.forward_propagation(X)
+        predictions = (A > 0.5)
+        return predictions
 
     def gradient_check(self, X, Y, epsilon = 1e-7):
         # take the current parameters and reshape them into a vector
